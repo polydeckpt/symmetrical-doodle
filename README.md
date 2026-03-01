@@ -1,26 +1,37 @@
-# Neon Hop (Vibe Mobile)
+# Neon Hop (mobile webapp)
 
-Jogo mobile simples em HTML/Canvas com vibe neon. Feito para jogar com um tap: saltar, evitar blocos e apanhar estrelas.
+Jogo mobile em webapp (HTML + CSS + TypeScript), pronto para testar no Replit/Replot sem backend.
 
-## Como jogar
+## Como testar no Replit (rápido)
 
-1. Compila o TypeScript com `npm install` e `npm run build`.
-2. Abre o `index.html` num browser (ou usa `npm run serve`).
-3. Toca/clica para saltar.
-4. Evita os blocos rosa e coleciona estrelas para pontos extra.
+1. Importa este repositório no Replit.
+2. No Shell, corre:
+   - `npm install`
+   - `npm run build`
+   - `npm run serve`
+3. Abre o preview em `http://localhost:8000`.
 
-## Porquê TypeScript?
+## Controles
 
-Ajuda a apanhar erros cedo (ex.: IDs de elementos, estados, tipos), e deixa o jogo mais fácil de manter à medida que adicionamos poderes, níveis e efeitos.
+- **Mobile**: swipe esquerda/direita para mudar de faixa, swipe para cima para saltar.
+- **Desktop**: setas esquerda/direita para mudar de faixa, seta cima ou espaço para saltar.
 
-## Testes rápidos
+## Privacidade (importante)
 
-- Servir localmente: `npm run serve` e abrir `http://localhost:8000`.
-- Ajustar algo no código: `npm run watch` e atualizar o browser.
+Para evitar que dados privados apareçam no GitHub:
 
-## Próximos passos (posso ajudar)
+- Guarda segredos só em `.env` local (já ignorado pelo `.gitignore`).
+- Não guardes prompts/notas privadas em ficheiros versionados.
+- Usa pastas locais como `private-notes/` ou `prompts/` (também ignoradas).
 
-- Adicionar som e música ambiente.
-- Mais personagens e skins.
-- Efeitos de partículas e combos.
-- Publicar como PWA (instalável no telemóvel).
+Exemplo de variável local em `.env`:
+
+```bash
+API_KEY=a_tua_chave_aqui
+```
+
+## Desenvolvimento
+
+- `npm run build` → compila `src/game.ts` para `dist/game.js`.
+- `npm run watch` → recompila automaticamente durante edição.
+- `npm run serve` → servidor local estático para teste.

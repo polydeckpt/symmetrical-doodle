@@ -1,16 +1,9 @@
 const canvas = document.getElementById("game") as HTMLCanvasElement | null;
 
-if (!canvas) {
-  throw new Error("Canvas #game não encontrado.");
-}
+if (!canvas) throw new Error("Canvas #game não encontrado.");
 
-const context = canvas.getContext("2d");
-
-if (!context) {
-  throw new Error("Contexto 2D indisponível.");
-}
-
-const ctx = context;
+const ctx = canvas.getContext("2d");
+if (!ctx) throw new Error("Contexto 2D indisponível.");
 
 const overlay = document.getElementById("overlay") as HTMLDivElement | null;
 const overlayTitle = document.getElementById("overlay-title") as HTMLHeadingElement | null;
@@ -20,97 +13,108 @@ const scoreLabel = document.getElementById("score") as HTMLSpanElement | null;
 const bestLabel = document.getElementById("best") as HTMLSpanElement | null;
 const statusLabel = document.getElementById("status") as HTMLSpanElement | null;
 
-if (!overlay || !overlayTitle || !overlaySubtitle || !startButton) {
-  throw new Error("Overlay incompleto. Verifica o HTML.");
+if (!overlay || !overlayTitle || !overlaySubtitle || !startButton || !scoreLabel || !bestLabel || !statusLabel) {
+  throw new Error("Elementos de UI em falta no HTML.");
 }
 
-if (!scoreLabel || !bestLabel || !statusLabel) {
-  throw new Error("HUD incompleto. Verifica o HTML.");
-}
+type Lane = 0 | 1 | 2;
 
-type Obstacle = {
-  x: number;
+type Block = {
+  lane: Lane;
   y: number;
-  width: number;
   height: number;
+  passed: boolean;
 };
 
-type Star = {
-  x: number;
+type Coin = {
+  lane: Lane;
   y: number;
   radius: number;
   collected: boolean;
 };
 
-const world = {
-  width: canvas.width,
-  height: canvas.height,
-};
+const world = { width: 720, height: 1280, groundY: 1040 };
+const laneX = [220, 360, 500] as const;
 
 const player = {
-  x: 120,
-  y: 980,
-  size: 56,
+  lane: 1 as Lane,
+  x: laneX[1],
+  y: 920,
+  size: 78,
   velocityY: 0,
-  gravity: 1.35,
-  jumpStrength: -22,
+  gravity: 1.5,
+  jumpStrength: -24,
   grounded: true,
 };
 
-let obstacles: Obstacle[] = [];
-let stars: Star[] = [];
+let blocks: Block[] = [];
+let coins: Coin[] = [];
 let score = 0;
-let best = 0;
+let best = Number(localStorage.getItem("neon-hop-best") || 0);
 let running = false;
-let speed = 7;
+let speed = 9;
 let lastTime = 0;
-let spawnTimer = 0;
-let starTimer = 0;
+let blockTimer = 0;
+let coinTimer = 0;
+let touchStartX = 0;
+let touchStartY = 0;
+
+bestLabel.textContent = String(best);
 
 function resizeCanvas(): void {
   const ratio = window.devicePixelRatio || 1;
-  const width = 720;
-  const height = 1280;
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
+  canvas.width = world.width * ratio;
+  canvas.height = world.height * ratio;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  world.width = width;
-  world.height = height;
+}
+
+function showOverlay(title: string, subtitle: string, buttonText: string): void {
+  overlayTitle.textContent = title;
+  overlaySubtitle.textContent = subtitle;
+  startButton.textContent = buttonText;
+  overlay.classList.remove("hidden");
+}
+
+function hideOverlay(): void {
+  overlay.classList.add("hidden");
 }
 
 function resetGame(): void {
-  obstacles = [];
-  stars = [];
+  blocks = [];
+  coins = [];
   score = 0;
-  speed = 7;
-  player.y = 980;
+  speed = 9;
+  player.lane = 1;
+  player.x = laneX[1];
+  player.y = 920;
   player.velocityY = 0;
   player.grounded = true;
-  spawnTimer = 0;
-  starTimer = 0;
-  updateScore();
+  blockTimer = 0;
+  coinTimer = 0;
+  scoreLabel.textContent = "0";
 }
 
 function startGame(): void {
   resetGame();
   running = true;
-  overlay.classList.add("hidden");
   statusLabel.textContent = "A jogar";
+  hideOverlay();
 }
 
-function endGame(): void {
+function gameOver(): void {
   running = false;
-  best = Math.max(best, score);
-  bestLabel.textContent = String(best);
-  overlayTitle.textContent = "Perdeste o ritmo";
-  overlaySubtitle.textContent = "Tenta novamente. Podes ajustar o salto se quiseres.";
-  startButton.textContent = "Recomeçar";
-  overlay.classList.remove("hidden");
-  statusLabel.textContent = "Pausa";
+  statusLabel.textContent = "Game over";
+  if (score > best) {
+    best = score;
+    localStorage.setItem("neon-hop-best", String(best));
+    bestLabel.textContent = String(best);
+  }
+  showOverlay("Fim do jogo", "Desvia dos blocos e recolhe moedas ✨", "Tentar novamente");
 }
 
-function updateScore(): void {
-  scoreLabel.textContent = String(score);
+function moveLane(direction: -1 | 1): void {
+  const next = Math.max(0, Math.min(2, player.lane + direction)) as Lane;
+  player.lane = next;
 }
 
 function jump(): void {
@@ -125,23 +129,14 @@ function jump(): void {
   }
 }
 
-function spawnObstacle(): void {
-  const height = 80 + Math.random() * 120;
-  obstacles.push({
-    x: world.width + 80,
-    y: world.height - height - 120,
-    width: 70 + Math.random() * 40,
-    height,
-  });
+function spawnBlock(): void {
+  const lane = Math.floor(Math.random() * 3) as Lane;
+  blocks.push({ lane, y: -140, height: 120 + Math.random() * 80, passed: false });
 }
 
-function spawnStar(): void {
-  stars.push({
-    x: world.width + 120,
-    y: 400 + Math.random() * 320,
-    radius: 18,
-    collected: false,
-  });
+function spawnCoin(): void {
+  const lane = Math.floor(Math.random() * 3) as Lane;
+  coins.push({ lane, y: -100, radius: 24, collected: false });
 }
 
 function update(delta: number): void {
@@ -150,142 +145,172 @@ function update(delta: number): void {
     return;
   }
 
+  player.x += (laneX[player.lane] - player.x) * 0.24;
   player.velocityY += player.gravity;
   player.y += player.velocityY;
 
-  const groundY = world.height - 120 - player.size;
-  if (player.y >= groundY) {
-    player.y = groundY;
+  if (player.y >= 920) {
+    player.y = 920;
     player.velocityY = 0;
     player.grounded = true;
   }
 
-  spawnTimer += delta;
-  starTimer += delta;
+  blockTimer += delta;
+  coinTimer += delta;
 
-  if (spawnTimer > 1000) {
-    spawnObstacle();
-    spawnTimer = 0;
+  if (blockTimer > 900) {
+    spawnBlock();
+    blockTimer = 0;
   }
 
-  if (starTimer > 1800) {
-    spawnStar();
-    starTimer = 0;
+  if (coinTimer > 1300) {
+    spawnCoin();
+    coinTimer = 0;
   }
 
-  obstacles.forEach((obstacle) => {
-    obstacle.x -= speed;
+  blocks.forEach((block) => {
+    block.y += speed;
+    if (!block.passed && block.y > world.groundY + 120) {
+      block.passed = true;
+      score += 1;
+    }
   });
 
-  stars.forEach((star) => {
-    star.x -= speed * 0.8;
+  coins.forEach((coin) => {
+    coin.y += speed * 0.92;
   });
 
-  obstacles = obstacles.filter((obstacle) => obstacle.x + obstacle.width > -50);
-  stars = stars.filter((star) => star.x + star.radius > -50 && !star.collected);
+  blocks = blocks.filter((block) => block.y < world.height + 180);
+  coins = coins.filter((coin) => coin.y < world.height + 80 && !coin.collected);
 
-  obstacles.forEach((obstacle) => {
-    const hitX = player.x < obstacle.x + obstacle.width && player.x + player.size > obstacle.x;
-    const hitY = player.y < obstacle.y + obstacle.height && player.y + player.size > obstacle.y;
+  for (const block of blocks) {
+    const bx = laneX[block.lane] - 50;
+    const by = block.y;
+    const bw = 100;
+    const bh = block.height;
+
+    const hitX = player.x - player.size / 2 < bx + bw && player.x + player.size / 2 > bx;
+    const hitY = player.y < by + bh && player.y + player.size > by;
     if (hitX && hitY) {
-      endGame();
+      gameOver();
+      return;
     }
-  });
+  }
 
-  stars.forEach((star) => {
-    const dx = player.x + player.size / 2 - star.x;
-    const dy = player.y + player.size / 2 - star.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance < player.size / 2 + star.radius) {
-      star.collected = true;
+  coins.forEach((coin) => {
+    const dx = player.x - laneX[coin.lane];
+    const dy = player.y + player.size / 2 - coin.y;
+    if (Math.hypot(dx, dy) < coin.radius + player.size / 2 - 6) {
+      coin.collected = true;
       score += 3;
-      updateScore();
     }
   });
 
-  score += Math.floor(delta / 120);
-  speed = 7 + score / 50;
-  updateScore();
+  speed = 9 + score * 0.04;
+  scoreLabel.textContent = String(score);
   draw();
 }
 
 function drawBackground(): void {
   const gradient = ctx.createLinearGradient(0, 0, 0, world.height);
-  gradient.addColorStop(0, "#1a1740");
-  gradient.addColorStop(1, "#09090f");
+  gradient.addColorStop(0, "#1d1552");
+  gradient.addColorStop(1, "#0a0a12");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, world.width, world.height);
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-  for (let i = 0; i < 6; i += 1) {
-    ctx.fillRect(i * 140 + (Date.now() / 20) % 140, world.height - 120, 90, 120);
+  ctx.strokeStyle = "rgba(124, 92, 255, 0.22)";
+  ctx.lineWidth = 4;
+  for (const x of laneX) {
+    ctx.beginPath();
+    ctx.moveTo(x, 260);
+    ctx.lineTo(x, world.groundY + 100);
+    ctx.stroke();
   }
+
+  ctx.fillStyle = "#141427";
+  ctx.fillRect(80, world.groundY + 100, world.width - 160, 60);
 }
 
 function drawPlayer(): void {
   ctx.save();
-  ctx.fillStyle = "#7c5cff";
-  ctx.shadowColor = "rgba(124, 92, 255, 0.9)";
-  ctx.shadowBlur = 24;
-  ctx.fillRect(player.x, player.y, player.size, player.size);
+  ctx.fillStyle = "#66d9ff";
+  ctx.shadowColor = "rgba(102, 217, 255, 0.9)";
+  ctx.shadowBlur = 20;
+  ctx.fillRect(player.x - player.size / 2, player.y, player.size, player.size);
   ctx.restore();
 }
 
-function drawObstacles(): void {
-  obstacles.forEach((obstacle) => {
+function drawBlocks(): void {
+  blocks.forEach((block) => {
     ctx.save();
     ctx.fillStyle = "#ff4d8d";
     ctx.shadowColor = "rgba(255, 77, 141, 0.8)";
     ctx.shadowBlur = 18;
-    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    ctx.fillRect(laneX[block.lane] - 50, block.y, 100, block.height);
     ctx.restore();
   });
 }
 
-function drawStars(): void {
-  stars.forEach((star) => {
+function drawCoins(): void {
+  coins.forEach((coin) => {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+    ctx.arc(laneX[coin.lane], coin.y, coin.radius, 0, Math.PI * 2);
     ctx.fillStyle = "#ffd166";
-    ctx.shadowColor = "rgba(255, 209, 102, 0.8)";
-    ctx.shadowBlur = 16;
+    ctx.shadowColor = "rgba(255, 209, 102, 0.9)";
+    ctx.shadowBlur = 14;
     ctx.fill();
     ctx.restore();
   });
 }
 
-function drawHUD(): void {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-  ctx.font = "24px sans-serif";
-  ctx.fillText(`Velocidade: ${speed.toFixed(1)}`, 40, 60);
+function drawHudInsideCanvas(): void {
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.font = "22px sans-serif";
+  ctx.fillText(`Velocidade ${speed.toFixed(1)}`, 32, 52);
+  ctx.fillText("Swipe ← → para trocar faixa, swipe ↑ para saltar", 32, 86);
 }
 
 function draw(): void {
   drawBackground();
-  drawStars();
-  drawObstacles();
+  drawCoins();
+  drawBlocks();
   drawPlayer();
-  drawHUD();
+  drawHudInsideCanvas();
 }
 
 function loop(timestamp: number): void {
   const delta = timestamp - lastTime;
   lastTime = timestamp;
-  update(delta);
+  update(delta || 16);
   requestAnimationFrame(loop);
 }
 
-function handleKey(event: KeyboardEvent): void {
-  if (event.code === "Space") {
+function onKeyDown(event: KeyboardEvent): void {
+  if (event.code === "ArrowLeft") moveLane(-1);
+  if (event.code === "ArrowRight") moveLane(1);
+  if (event.code === "ArrowUp" || event.code === "Space") {
     event.preventDefault();
     jump();
   }
 }
 
-function handleOverlayTap(event: PointerEvent): void {
-  const target = event.target as HTMLElement | null;
-  if (target && target.closest("button")) {
+function onPointerDown(event: PointerEvent): void {
+  touchStartX = event.clientX;
+  touchStartY = event.clientY;
+}
+
+function onPointerUp(event: PointerEvent): void {
+  const dx = event.clientX - touchStartX;
+  const dy = event.clientY - touchStartY;
+
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
+    moveLane(dx > 0 ? 1 : -1);
+    return;
+  }
+
+  if (dy < -30) {
+    jump();
     return;
   }
 
@@ -293,10 +318,12 @@ function handleOverlayTap(event: PointerEvent): void {
 }
 
 startButton.addEventListener("click", startGame);
-window.addEventListener("keydown", handleKey);
-canvas.addEventListener("pointerdown", jump);
-overlay.addEventListener("pointerdown", handleOverlayTap);
+window.addEventListener("keydown", onKeyDown);
+canvas.addEventListener("pointerdown", onPointerDown);
+canvas.addEventListener("pointerup", onPointerUp);
+overlay.addEventListener("pointerup", () => jump());
 window.addEventListener("resize", resizeCanvas);
 
+showOverlay("Neon Hop", "Faz swipe para desviar e saltar. Funciona super bem em mobile.", "Começar");
 resizeCanvas();
 requestAnimationFrame(loop);
