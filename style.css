@@ -1,0 +1,179 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: #0a0a12;
+  color: #f5f5f7;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #221f4b, #0a0a12 55%);
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  padding: 1.5rem;
+  gap: 1rem;
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #5f56ff, #fc5c7d);
+  box-shadow: 0 0 16px rgba(95, 86, 255, 0.65);
+  font-size: 1.5rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+p {
+  color: #a9a8c7;
+  font-size: 0.95rem;
+}
+
+.scoreboard {
+  display: flex;
+  gap: 1rem;
+  background: rgba(10, 9, 30, 0.6);
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12rem;
+  color: #7b79a4;
+}
+
+#score,
+#best,
+#status {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+canvas {
+  width: min(90vw, 420px);
+  max-height: 70vh;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #141437, #090912 85%);
+  box-shadow: 0 30px 80px rgba(5, 5, 15, 0.6);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 6, 12, 0.6);
+  border-radius: 32px;
+  text-align: center;
+  padding: 1.5rem;
+  gap: 1rem;
+  transition: opacity 0.2s ease;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card {
+  background: rgba(20, 20, 40, 0.85);
+  padding: 1.5rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.card h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+button {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #66d9ff, #8f5bff);
+  color: #0a0a12;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #9e9cc6;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #b1afcb;
+}
+
+.legend {
+  color: #7c7aa6;
+}
+
+@media (max-width: 680px) {
+  .app {
+    padding: 1rem;
+  }
+
+  .hud {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scoreboard {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

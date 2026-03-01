@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neon Hop - Vibe Mobile</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hud">
+        <div class="brand">
+          <span class="logo">✨</span>
+          <div>
+            <h1>Neon Hop</h1>
+            <p>Vibe coded para mobile</p>
+          </div>
+        </div>
+        <div class="scoreboard">
+          <div>
+            <span class="label">Score</span>
+            <span id="score">0</span>
+          </div>
+          <div>
+            <span class="label">Melhor</span>
+            <span id="best">0</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="stage">
+        <canvas id="game" width="720" height="1280"></canvas>
+        <div class="overlay" id="overlay">
+          <div class="card">
+            <h2 id="overlay-title">Tap to start</h2>
+            <p id="overlay-subtitle">
+              Salta sobre os blocos, apanha estrelas e mantem o ritmo.
+            </p>
+            <button id="start-button">Começar</button>
+          </div>
+          <div class="hint">Tap / click / barra de espaço</div>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <div>
+          <span class="label">Estado</span>
+          <span id="status">Pronto</span>
+        </div>
+        <div class="legend">
+          <span>🎵 Sem som por agora (posso adicionar).</span>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="dist/game.js"></script>
+  </body>
+</html>
