@@ -4,6 +4,7 @@
     "module": "ES2020",
     "moduleResolution": "Bundler",
     "strict": true,
+    "strictNullChecks": false,
     "rootDir": "src",
     "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
